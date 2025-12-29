@@ -90,9 +90,8 @@ jobs:
         mkdir -p $HOME/Android/sdk
         mkdir -p $HOME/Android/ndk
     
-    - name: Initialize buildozer
+    - name: Check buildozer configuration
       run: |
-        buildozer init --version
         buildozer --version
         echo "=== Checking buildozer.spec ==="
         cat buildozer.spec
