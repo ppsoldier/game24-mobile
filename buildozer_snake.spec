@@ -30,6 +30,7 @@ android.archs = arm64-v8a,armeabi-v7a
 
 android.ndk = 25b
 android.sdk = 31
+android.build_tools = 30.0.3
 
 android.accept_sdk_license = True
 

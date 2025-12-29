@@ -100,19 +100,10 @@ jobs:
         yes | sdkmanager --licenses || true
         yes | sdkmanager --update || true
     
-    - name: Initialize autotools
-      run: |
-        echo "=== Initializing autotools ==="
-        export ACLOCAL_PATH=$(aclocal --print-ac-dir):$ACLOCAL_PATH
-        libtoolize --force --copy || echo "libtoolize failed"
-        aclocal || echo "aclocal failed"
-        autoheader || echo "autoheader failed"
-        autoconf || echo "autoconf failed"
-        automake --add-missing || echo "automake failed"
-        echo "=== Autotools initialization complete ==="
-    
     - name: Build APK
       run: |
+        export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+        export ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk
         cp buildozer_snake.spec buildozer.spec
         buildozer android debug
       continue-on-error: false
