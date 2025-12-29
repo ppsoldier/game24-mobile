@@ -55,10 +55,26 @@ jobs:
           cmake \
           libffi-dev \
           libssl-dev \
-          autoconf \
-          libtool \
           zip \
           unzip
+    
+    - name: Verify libtool installation
+      run: |
+        echo "=== Checking libtool installation ==="
+        libtool --version
+        echo ""
+        echo "=== Checking aclocal path ==="
+        aclocal --print-ac-dir
+        echo ""
+        echo "=== Checking for libtool.m4 ==="
+        find /usr/share -name "libtool.m4" 2>/dev/null || echo "libtool.m4 not found"
+        echo ""
+        echo "=== Checking for lt~obsolete.m4 ==="
+        find /usr/share -name "lt~obsolete.m4" 2>/dev/null || echo "lt~obsolete.m4 not found"
+        echo ""
+        echo "=== Setting ACLOCAL_PATH ==="
+        export ACLOCAL_PATH=$(aclocal --print-ac-dir):$ACLOCAL_PATH
+        echo "ACLOCAL_PATH=$ACLOCAL_PATH"
     
     - name: Set up JDK
       uses: actions/setup-java@v3
@@ -130,12 +146,23 @@ jobs:
         ANDROID_NDK_HOME: $HOME/.buildozer/android/platform/android-ndk-r25b
         ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
         JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+        ACLOCAL_PATH: /usr/share/aclocal
       run: |
         export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
         export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
         export ANDROID_SDK_ROOT=$ANDROID_HOME
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export ACLOCAL_PATH=/usr/share/aclocal
+        export LIBTOOLIZE=libtoolize
         mkdir -p $HOME/.android
+        echo "=== Environment variables ==="
+        echo "ANDROID_HOME=$ANDROID_HOME"
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+        echo "JAVA_HOME=$JAVA_HOME"
+        echo "ACLOCAL_PATH=$ACLOCAL_PATH"
+        echo "LIBTOOLIZE=$LIBTOOLIZE"
+        echo ""
         echo "=== Starting buildozer build ==="
         yes | buildozer android debug --verbose 2>&1 | tee build.log
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
