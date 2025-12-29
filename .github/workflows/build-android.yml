@@ -107,17 +107,23 @@ jobs:
     - name: Accept Android SDK licenses
       run: |
         mkdir -p $HOME/.android
-        yes | sdkmanager --licenses || true
+        echo "y" | sdkmanager --licenses || echo "sdkmanager not found yet, will accept during build"
+        echo "y" | sdkmanager --licenses || true
     
     - name: Build APK with verbose output
+      env:
+        ANDROID_HOME: $HOME/.buildozer/android/platform/android-sdk
+        ANDROID_NDK_HOME: $HOME/.buildozer/android/platform/android-ndk-r25b
+        ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
+        JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       run: |
-        export ANDROID_HOME=$HOME/Android/sdk
-        export ANDROID_NDK_HOME=$HOME/Android/ndk
-        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
         export ANDROID_SDK_ROOT=$ANDROID_HOME
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
         mkdir -p $HOME/.android
         echo "=== Starting buildozer build ==="
-        buildozer android debug --verbose 2>&1 | tee build.log
+        yes | buildozer android debug --verbose 2>&1 | tee build.log
         echo "=== Build completed ==="
       continue-on-error: true
     
