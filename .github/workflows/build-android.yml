@@ -114,7 +114,7 @@ jobs:
         echo "=== Build completed ==="
       continue-on-error: true
     
-    - name: Check build log
+    - name: Check build log and find APK
       if: always()
       run: |
         echo "=== Build Log (last 200 lines) ==="
@@ -124,13 +124,16 @@ jobs:
         ls -la
         echo ""
         echo "=== Searching for APK files ==="
-        find . -name "*.apk" -type f -exec ls -lh {} \; || echo "No APK files found"
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
         echo ""
         echo "=== Buildozer directory ==="
         ls -la .buildozer/ || echo "No .buildozer directory"
         echo ""
         echo "=== Bin directory ==="
         ls -la bin/ || echo "No bin directory"
+        echo ""
+        echo "=== Android build directory ==="
+        ls -la .buildozer/android/platform/build/dists/ 2>/dev/null || echo "No APK in buildozer android directory"
     
     - name: Upload build log
       if: always()
@@ -148,6 +151,7 @@ jobs:
         path: |
           bin/*.apk
           .buildozer/android/platform/build/dists/*.apk
+          .buildozer/android/platform/new-project/dists/*.apk
           **/*.apk
         retention-days: 30
         if-no-files-found: warn
