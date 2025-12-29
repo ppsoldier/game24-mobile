@@ -48,6 +48,7 @@ jobs:
           automake \
           autoconf \
           libtool \
+          libtool-bin \
           pkg-config \
           libncurses5-dev \
           libncursesw5-dev \
@@ -61,10 +62,16 @@ jobs:
     - name: Verify libtool installation
       run: |
         echo "=== Checking libtool installation ==="
-        libtool --version
+        which libtool || echo "libtool not found in PATH"
+        libtool --version || echo "libtool command failed"
+        echo ""
+        echo "=== Checking libtoolize installation ==="
+        which libtoolize || echo "libtoolize not found in PATH"
+        libtoolize --version || echo "libtoolize command failed"
         echo ""
         echo "=== Checking aclocal path ==="
-        aclocal --print-ac-dir
+        which aclocal || echo "aclocal not found in PATH"
+        aclocal --print-ac-dir || echo "aclocal command failed"
         echo ""
         echo "=== Checking for libtool.m4 ==="
         find /usr/share -name "libtool.m4" 2>/dev/null || echo "libtool.m4 not found"
