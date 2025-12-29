@@ -104,11 +104,18 @@ jobs:
         echo "ANDROID_HOME=$ANDROID_HOME"
         echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
     
+    - name: Accept Android SDK licenses
+      run: |
+        mkdir -p $HOME/.android
+        yes | sdkmanager --licenses || true
+    
     - name: Build APK with verbose output
       run: |
         export ANDROID_HOME=$HOME/Android/sdk
         export ANDROID_NDK_HOME=$HOME/Android/ndk
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        mkdir -p $HOME/.android
         echo "=== Starting buildozer build ==="
         buildozer android debug --verbose 2>&1 | tee build.log
         echo "=== Build completed ==="
