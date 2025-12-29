@@ -14,6 +14,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     
     steps:
     - name: Checkout code
@@ -24,11 +25,8 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install buildozer
-        pip install cython
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
@@ -56,13 +54,25 @@ jobs:
           libtinfo5 \
           cmake \
           libffi-dev \
-          libssl-dev
+          libssl-dev \
+          autoconf \
+          libtool \
+          zip \
+          unzip
     
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer==1.5.0
+        pip install cython==0.29.36
+        pip install kivy==2.2.0
+        pip install kivymd
     
     - name: Cache buildozer
       uses: actions/cache@v3
@@ -74,43 +84,45 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildozer-
     
-    - name: Download Android SDK and NDK
+    - name: Create build directories
       run: |
         mkdir -p $HOME/.android
         mkdir -p $HOME/Android/sdk
         mkdir -p $HOME/Android/ndk
     
-    - name: Initialize buildozer
-      run: |
-        buildozer init
-      continue-on-error: true
-    
-    - name: Build APK
+    - name: Build APK with verbose output
       run: |
         export ANDROID_HOME=$HOME/Android/sdk
         export ANDROID_NDK_HOME=$HOME/Android/ndk
-        buildozer -v android debug
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        buildozer -v android debug 2>&1 | tee build.log
       continue-on-error: true
     
-    - name: Find APK
+    - name: Check build log
+      if: always()
       run: |
-        echo "Searching for APK files..."
-        find . -name "*.apk" -type f -exec ls -lh {} \;
+        echo "=== Build Log ==="
+        tail -n 100 build.log || echo "No build log found"
+        echo ""
+        echo "=== Searching for APK files ==="
+        find . -name "*.apk" -type f -exec ls -lh {} \; || echo "No APK files found"
+    
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-log
+        path: build.log
+        retention-days: 7
     
     - name: Upload APK
       uses: actions/upload-artifact@v3
+      if: always()
       with:
         name: game24-apk
         path: |
           bin/*.apk
           .buildozer/android/platform/build/dists/*.apk
+          **/*.apk
         retention-days: 30
-      if: always()
-    
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: bin/*.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if-no-files-found: warn
