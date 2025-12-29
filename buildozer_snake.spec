@@ -29,7 +29,7 @@ warn_on_root_pitcher = True
 android.archs = arm64-v8a,armeabi-v7a
 
 android.ndk = 25b
-android.sdk = 33
+android.sdk = 31
 
 android.accept_sdk_license = True
 

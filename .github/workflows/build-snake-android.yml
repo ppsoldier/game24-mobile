@@ -93,6 +93,13 @@ jobs:
         pip install cython
         pip install pillow
     
+    - name: Accept Android SDK licenses
+      run: |
+        mkdir -p ~/.android
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
+        yes | sdkmanager --licenses || true
+        yes | sdkmanager --update || true
+    
     - name: Initialize autotools
       run: |
         echo "=== Initializing autotools ==="
