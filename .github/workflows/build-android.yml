@@ -133,12 +133,27 @@ jobs:
         export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
         export ANDROID_SDK_ROOT=$ANDROID_HOME
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export ACLOCAL_PATH=/usr/share/aclocal
+        export LIBTOOLIZE=libtoolize
         mkdir -p $HOME/.android
         echo "=== Initializing buildozer ==="
         buildozer android update 2>&1 || true
         echo "=== Accepting licenses after init ==="
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
         yes | sdkmanager --licenses || true
+    
+    - name: Fix libtool configuration
+      run: |
+        echo "=== Running libtoolize to generate m4 macros ==="
+        libtoolize --force --copy --ltdl || echo "libtoolize completed"
+        echo "=== Running aclocal to generate aclocal.m4 ==="
+        aclocal -I /usr/share/aclocal || echo "aclocal completed"
+        echo "=== Running autoheader ==="
+        autoheader || echo "autoheader completed"
+        echo "=== Running autoconf ==="
+        autoconf || echo "autoconf completed"
+        echo "=== Running automake ==="
+        automake --add-missing --copy || echo "automake completed"
     
     - name: Build APK with verbose output
       env:
@@ -147,6 +162,8 @@ jobs:
         ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
         JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
         ACLOCAL_PATH: /usr/share/aclocal
+        LIBTOOLIZE: libtoolize
+        M4: /usr/bin/m4
       run: |
         export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
         export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
@@ -154,6 +171,7 @@ jobs:
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
         export ACLOCAL_PATH=/usr/share/aclocal
         export LIBTOOLIZE=libtoolize
+        export M4=/usr/bin/m4
         mkdir -p $HOME/.android
         echo "=== Environment variables ==="
         echo "ANDROID_HOME=$ANDROID_HOME"
@@ -162,6 +180,7 @@ jobs:
         echo "JAVA_HOME=$JAVA_HOME"
         echo "ACLOCAL_PATH=$ACLOCAL_PATH"
         echo "LIBTOOLIZE=$LIBTOOLIZE"
+        echo "M4=$M4"
         echo ""
         echo "=== Starting buildozer build ==="
         yes | buildozer android debug --verbose 2>&1 | tee build.log
