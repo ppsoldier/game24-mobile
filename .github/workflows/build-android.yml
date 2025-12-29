@@ -80,21 +80,32 @@ jobs:
         mkdir -p $HOME/Android/sdk
         mkdir -p $HOME/Android/ndk
     
+    - name: Initialize buildozer
+      run: |
+        buildozer init
+      continue-on-error: true
+    
     - name: Build APK
       run: |
-        buildozer android debug
+        export ANDROID_HOME=$HOME/Android/sdk
+        export ANDROID_NDK_HOME=$HOME/Android/ndk
+        buildozer -v android debug
       continue-on-error: true
     
     - name: Find APK
       run: |
-        find . -name "*.apk" -type f
+        echo "Searching for APK files..."
+        find . -name "*.apk" -type f -exec ls -lh {} \;
     
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: game24-apk
-        path: bin/*.apk
+        path: |
+          bin/*.apk
+          .buildozer/android/platform/build/dists/*.apk
         retention-days: 30
+      if: always()
     
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
