@@ -90,22 +90,48 @@ jobs:
         mkdir -p $HOME/Android/sdk
         mkdir -p $HOME/Android/ndk
     
+    - name: Initialize buildozer
+      run: |
+        buildozer init --version
+        buildozer --version
+        echo "=== Checking buildozer.spec ==="
+        cat buildozer.spec
+    
+    - name: Download Android SDK and NDK
+      run: |
+        export ANDROID_HOME=$HOME/Android/sdk
+        export ANDROID_NDK_HOME=$HOME/Android/ndk
+        mkdir -p $ANDROID_HOME $ANDROID_NDK_HOME
+        echo "ANDROID_HOME=$ANDROID_HOME"
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+    
     - name: Build APK with verbose output
       run: |
         export ANDROID_HOME=$HOME/Android/sdk
         export ANDROID_NDK_HOME=$HOME/Android/ndk
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-        buildozer -v android debug 2>&1 | tee build.log
+        echo "=== Starting buildozer build ==="
+        buildozer android debug --verbose 2>&1 | tee build.log
+        echo "=== Build completed ==="
       continue-on-error: true
     
     - name: Check build log
       if: always()
       run: |
-        echo "=== Build Log ==="
-        tail -n 100 build.log || echo "No build log found"
+        echo "=== Build Log (last 200 lines) ==="
+        tail -n 200 build.log || echo "No build log found"
+        echo ""
+        echo "=== File Structure ==="
+        ls -la
         echo ""
         echo "=== Searching for APK files ==="
         find . -name "*.apk" -type f -exec ls -lh {} \; || echo "No APK files found"
+        echo ""
+        echo "=== Buildozer directory ==="
+        ls -la .buildozer/ || echo "No .buildozer directory"
+        echo ""
+        echo "=== Bin directory ==="
+        ls -la bin/ || echo "No bin directory"
     
     - name: Upload build log
       if: always()
