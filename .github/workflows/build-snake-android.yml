@@ -1,0 +1,145 @@
+name: Build Snake Game Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Cache Buildozer
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer_snake.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          git \
+          ffmpeg \
+          libsdl2-dev \
+          libsdl2-image-dev \
+          libsdl2-mixer-dev \
+          libsdl2-ttf-dev \
+          libportmidi-dev \
+          libswscale-dev \
+          libavformat-dev \
+          libavcodec-dev \
+          zlib1g-dev \
+          libgstreamer1.0-dev \
+          gstreamer1.0-plugins-base \
+          gstreamer1.0-plugins-good \
+          openjdk-17-jdk \
+          automake \
+          autoconf \
+          libtool \
+          libtool-bin \
+          pkg-config \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo6 \
+          cmake \
+          libffi-dev \
+          libssl-dev \
+          zip \
+          unzip
+    
+    - name: Verify libtool installation
+      run: |
+        echo "=== Checking libtool installation ==="
+        which libtool || echo "libtool not found in PATH"
+        libtool --version || echo "libtool command failed"
+        echo ""
+        echo "=== Checking libtoolize installation ==="
+        which libtoolize || echo "libtoolize not found in PATH"
+        libtoolize --version || echo "libtoolize command failed"
+        echo ""
+        echo "=== Checking aclocal path ==="
+        which aclocal || echo "aclocal not found in PATH"
+        aclocal --print-ac-dir || echo "aclocal command failed"
+        echo ""
+        echo "=== Checking for libtool.m4 ==="
+        find /usr/share -name "libtool.m4" 2>/dev/null || echo "libtool.m4 not found"
+        echo ""
+        echo "=== Checking for lt~obsolete.m4 ==="
+        find /usr/share -name "lt~obsolete.m4" 2>/dev/null || echo "lt~obsolete.m4 not found"
+        echo ""
+        echo "=== Setting ACLOCAL_PATH ==="
+        export ACLOCAL_PATH=$(aclocal --print-ac-dir):$ACLOCAL_PATH
+        echo "ACLOCAL_PATH=$ACLOCAL_PATH"
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer
+        pip install cython
+        pip install pillow
+    
+    - name: Initialize autotools
+      run: |
+        echo "=== Initializing autotools ==="
+        export ACLOCAL_PATH=$(aclocal --print-ac-dir):$ACLOCAL_PATH
+        libtoolize --force --copy || echo "libtoolize failed"
+        aclocal || echo "aclocal failed"
+        autoheader || echo "autoheader failed"
+        autoconf || echo "autoconf failed"
+        automake --add-missing || echo "automake failed"
+        echo "=== Autotools initialization complete ==="
+    
+    - name: Build APK
+      run: |
+        cp buildozer_snake.spec buildozer.spec
+        buildozer android debug
+      continue-on-error: false
+    
+    - name: Capture build logs
+      if: failure()
+      run: |
+        echo "=== Build failed. Capturing logs ==="
+        if [ -f .buildozer/logs/buildozer.log ]; then
+          echo "=== Buildozer log ==="
+          tail -n 200 .buildozer/logs/buildozer.log
+        fi
+        if [ -d .buildozer/android/platform ]; then
+          echo "=== Platform directory contents ==="
+          find .buildozer/android/platform -name "*.log" -exec tail -n 50 {} \; 2>/dev/null || true
+        fi
+    
+    - name: Find and upload APK
+      run: |
+        echo "=== Searching for APK files ==="
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        echo ""
+        echo "=== Checking common build directories ==="
+        ls -la bin/ 2>/dev/null || echo "bin/ directory not found"
+        ls -la .buildozer/android/platform/build/dists/ 2>/dev/null || echo "dists directory not found"
+        ls -la .buildozer/android/platform/new-project/dists/ 2>/dev/null || echo "new-project/dists directory not found"
+    
+    - name: Upload APK artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: snake-game-apk
+        path: |
+          bin/*.apk
+          .buildozer/android/platform/build/dists/*.apk
+          .buildozer/android/platform/new-project/dists/*.apk
+          **/*.apk
+        if-no-files-found: warn

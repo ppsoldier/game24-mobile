@@ -28,7 +28,6 @@ env/
 
 # Kivy
 .kivy/
-*.kv
 
 # Buildozer
 .bin/
