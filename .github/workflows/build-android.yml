@@ -107,8 +107,22 @@ jobs:
     - name: Accept Android SDK licenses
       run: |
         mkdir -p $HOME/.android
-        echo "y" | sdkmanager --licenses || echo "sdkmanager not found yet, will accept during build"
+        echo "=== Accepting licenses ==="
+        echo "y" | sdkmanager --licenses || echo "sdkmanager not found yet"
         echo "y" | sdkmanager --licenses || true
+    
+    - name: Initialize buildozer and accept licenses
+      run: |
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        mkdir -p $HOME/.android
+        echo "=== Initializing buildozer ==="
+        buildozer android update 2>&1 || true
+        echo "=== Accepting licenses after init ==="
+        yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
+        yes | sdkmanager --licenses || true
     
     - name: Build APK with verbose output
       env:
